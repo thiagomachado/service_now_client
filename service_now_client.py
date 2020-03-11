@@ -1,30 +1,7 @@
 import requests
 import json
 import ntpath
-
-
-class InvalidFormat(Exception):
-    """
-    Exception for invalid format
-    """
-
-
-class ResponseError(Exception):
-    """
-    Exception for error in response
-    """
-
-
-class EmptyResult(Exception):
-    """
-    Exception for empty result output
-    """
-
-
-class InvalidValue(Exception):
-    """
-    Exception for invalid operator in searchList
-    """
+from exceptions import *
 
 
 class ServiceNowClient:
@@ -285,7 +262,7 @@ class ServiceNowClient:
         # Return result
         return result
 
-    def changeState(self, table, search_list, state):
+    def change_state(self, table, search_list, state):
         """
         Method to change state of an incident
 
@@ -738,4 +715,3 @@ class ServiceNowClient:
         data = self.response.json()
 
         return data['result']
-
