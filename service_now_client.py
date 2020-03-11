@@ -63,7 +63,7 @@ class ServiceNowClient:
 
         :param self: self object
         :param table: name of table (string)
-        :param search_list: comma separated field, operator and value to retrive matching incidents (simple or nested lists)
+        :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or nested lists)
         :param data: field and value to be updated (dictionary)
 
         Output : returns dictionary containing number and status of request as true or false or error
@@ -76,7 +76,7 @@ class ServiceNowClient:
             raise InvalidFormat('"table" format incorrect. String expected')
 
         # Calling search method to search for matching incidents
-        incident_list = self.search(table, search_list, 'number,sys_id')
+        incident_list = self.search(table, search_list, 'sys_id')
 
         # Terminate operation if no incidents are found
         if not incident_list:
@@ -99,10 +99,10 @@ class ServiceNowClient:
                                          data=json.dumps(data))
 
             if self.response.status_code != 200:
-                result[str(item['number'])] = 'Error Code ' + str(self.response.status_code) + ', ' + str(
+                result[str(item['sys_id'])] = 'Error Code ' + str(self.response.status_code) + ', ' + str(
                     self.response.json()['error'])
             else:
-                result[str(item['number'])] = 'true'
+                result[str(item['sys_id'])] = 'true'
 
         # Return result
         return result
@@ -221,7 +221,7 @@ class ServiceNowClient:
 
         :param self: self object
         :param table: table name (string)
-        :param search_list: comma separated field, operator and value to retrive matching incidents (simple or nested lists)
+        :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or nested lists)
 
         Output : returns dictionary containing number and status of request as true or false or error
         """
@@ -231,7 +231,7 @@ class ServiceNowClient:
             raise InvalidFormat('"table" format incorrect. String expected')
 
         # Calling search method to search for matching incidents
-        incident_list = self.search(table, search_list, 'number,sys_id')
+        incident_list = self.search(table, search_list, 'sys_id')
 
         # Terminate operation if no incidents are found
         if not incident_list:
@@ -254,10 +254,10 @@ class ServiceNowClient:
                                             )
 
             if self.response.status_code != 204:
-                result[str(item['number'])] = 'Error Code ' + str(self.response.status_code) + ', ' + str(
+                result[str(item['sys_id'])] = 'Error Code ' + str(self.response.status_code) + ', ' + str(
                     self.response.json()['error'])
             else:
-                result[str(item['number'])] = 'true'
+                result[str(item['sys_id'])] = 'true'
 
         # Return result
         return result
@@ -268,7 +268,7 @@ class ServiceNowClient:
 
         :param self: self object
         :param table: name of table (string)
-        :param search_list: comma separated field, operator and value to retrive matching incidents (simple or nested lists)
+        :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or nested lists)
         :param state: the target state of the ticket (string)
 
         Output : returns dictionary containing number and status of request as true or false or error
@@ -394,7 +394,7 @@ class ServiceNowClient:
 
         :param self: self object
         :param table: name of table (string)
-        :param search_list: comma separated field, operator and value to retrive matching incidents (simple or nested lists)
+        :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or nested lists)
         :param type: dot extension of the type of attachment to be downloaded (string)
 
         Output : returns dictionary containing number and status of request as true or false or error
@@ -481,7 +481,7 @@ class ServiceNowClient:
 
         :param self: self object
         :param table: table name (string)
-        :param search_list: comma separated field, operator and value to retrive matching incidents (simple or nested lists)
+        :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or nested lists)
         :param file_name: name of file to be uploaded (string)
 
         Output : returns dictionary containing number and status of request as true or false or error
@@ -534,7 +534,7 @@ class ServiceNowClient:
 
         :param self: self object
         :param table: name of table (string)
-        :param search_list: comma separated field, operator and value to retrive matching incidents (simple or nested lists)
+        :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or nested lists)
         :param filename: complete path of file to be uploaded (string)
 
         Output : returns dictionary containing number and status of request as true or false or error
@@ -630,8 +630,8 @@ class ServiceNowClient:
         :param self: self object
         :param subject: subject of email (string)
         :param message:	email body (string)
-        :param to: email address of reciever (string)
-        :param cc: Cc email addreses (string)
+        :param to: email address of receiver (string)
+        :param cc: Cc email addresses (string)
         :param bcc: Bcc email addresses (string)
         :param table: name of table (string)
         :param sys_id: sysId of incident (string)
