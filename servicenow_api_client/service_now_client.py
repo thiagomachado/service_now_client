@@ -1,7 +1,7 @@
 import requests
 import json
 import ntpath
-from exceptions import *
+from servicenow_api_client.exceptions import *
 
 
 class ServiceNowClient:
@@ -93,10 +93,10 @@ class ServiceNowClient:
             # Set the request parameters
             self.url = self.instance + '/api/now/table/' + str(table) + '/' + str(item['sys_id'])
 
-            self.response = requests.put(url=self.url,
-                                         auth=(self.username, self.password),
-                                         headers=self.headers,
-                                         data=json.dumps(data))
+            self.response = requests.patch(url=self.url,
+                                           auth=(self.username, self.password),
+                                           headers=self.headers,
+                                           data=json.dumps(data))
 
             if self.response.status_code != 200:
                 result[str(item['sys_id'])] = 'Error Code ' + str(self.response.status_code) + ', ' + str(
