@@ -37,10 +37,8 @@ class ServiceNowClient:
         """
 
         # Validation
-        if not isinstance(data, dict):
-            raise InvalidFormat('"data" format incorrect. Dictionary expected')
-        if not isinstance(table, str):
-            raise InvalidFormat('"table" format incorrect. String expected')
+        self.__validate_format(table, 'Table', str, 'String')
+        self.__validate_format(data, 'Data', dict, 'Dictionary')
 
         # Set the request parameters
         self.url = self.instance + '/api/now/table/' + str(table)
@@ -70,10 +68,8 @@ class ServiceNowClient:
         """
 
         # Validation
-        if not isinstance(data, dict):
-            raise InvalidFormat('"data" format incorrect. Dictionary expected')
-        if not isinstance(table, str):
-            raise InvalidFormat('"table" format incorrect. String expected')
+        self.__validate_format(table, 'Table', str, 'String')
+        self.__validate_format(data, 'Data', dict, 'Dictionary')
 
         # Calling search method to search for matching incidents
         incident_list = self.search(table, search_list, 'sys_id')
@@ -142,10 +138,8 @@ class ServiceNowClient:
         }
 
         # Validation
-        if not isinstance(fields, str):
-            raise InvalidFormat('"fields" format incorrect. String expected')
-        if not isinstance(table, str):
-            raise InvalidFormat('"table" format incorrect. String expected')
+        self.__validate_format(table, 'Table', str, 'String')
+        self.__validate_format(fields, 'Fields', str, 'String')
 
         # Validating, parsing searchList elements to form query part of url
         for line in search_list:
@@ -227,8 +221,7 @@ class ServiceNowClient:
         """
 
         # Validation
-        if not isinstance(table, str):
-            raise InvalidFormat('"table" format incorrect. String expected')
+        self.__validate_format(table, 'Table', str, 'String')
 
         # Calling search method to search for matching incidents
         incident_list = self.search(table, search_list, 'sys_id')
@@ -268,17 +261,16 @@ class ServiceNowClient:
 
         :param self: self object
         :param table: name of table (string)
-        :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or nested lists)
+        :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or
+                            nested lists)
         :param state: the target state of the ticket (string)
 
         Output : returns dictionary containing number and status of request as true or false or error
         """
 
         # Validation
-        if not isinstance(state, str):
-            raise InvalidFormat('"state" format incorrect. String expected')
-        if not isinstance(table, str):
-            raise InvalidFormat('"table" format incorrect. String expected')
+        self.__validate_format(table, 'Table', str, 'String')
+        self.__validate_format(state, 'State', str, 'String')
 
         table = table.lower()
         # Calling search method to search for matching incidents
@@ -401,11 +393,8 @@ class ServiceNowClient:
         """
 
         # Validation
-        if not (type == ''):
-            if not isinstance(type, str):
-                raise InvalidFormat('"type" format incorrect. String expected')
-        if not isinstance(table, str):
-            raise InvalidFormat('"table" format incorrect. String expected')
+        self.__validate_format(table, 'Table', str, 'String')
+        self.__validate_format(type, 'Type', str, 'String')
 
         # Calling search method to search for matching incidents
         incident_list = self.search(table, search_list, 'number,sys_id')
@@ -488,10 +477,8 @@ class ServiceNowClient:
         """
 
         # Validation
-        if not isinstance(table, str):
-            raise InvalidFormat('"table" format incorrect. String expected')
-        if not isinstance(file_name, str):
-            raise InvalidFormat('"filename" format incorrect. String expected')
+        self.__validate_format(table, 'Table', str, 'String')
+        self.__validate_format(file_name, 'File Name', str, 'String')
 
         # Calling search method to search for matching incidents
         incident_list = self.search(table, search_list, 'number,sys_id')
@@ -528,24 +515,21 @@ class ServiceNowClient:
         # Return result
         return result
 
-    def delete_file(self, table, search_list, filename):
+    def delete_file(self, table, search_list, file_name):
         """
         Deletes files to a specific ticket
 
         :param self: self object
         :param table: name of table (string)
         :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or nested lists)
-        :param filename: complete path of file to be uploaded (string)
+        :param file_name: complete path of file to be uploaded (string)
 
         Output : returns dictionary containing number and status of request as true or false or error
         """
 
         # Validation
-        if not isinstance(table, str):
-            raise InvalidFormat('"table" format incorrect. String expected')
-
-        if not isinstance(filename, str):
-            raise InvalidFormat('"filename" format incorrect. String expected')
+        self.__validate_format(table, 'Table', str, 'String')
+        self.__validate_format(file_name, 'File Name', str, 'String')
 
         # Calling search method to search for matching incidents
         incident_list = self.search(table, search_list, 'number,sys_id')
@@ -594,7 +578,7 @@ class ServiceNowClient:
             # Delete the specified types of file from the web location received in JSON response
             file_found = False
             for item_attach in attachment_data['result']:
-                if str(item_attach['file_name']) == filename:
+                if str(item_attach['file_name']) == file_name:
                     file_found = True
                     file_found_all = True
 
@@ -639,25 +623,21 @@ class ServiceNowClient:
         Output : returns email content
         """
 
-        # Validation
-        if not str(to):
-            raise InvalidFormat('\nMandatory parameter "to" missing')
-
-        if (str(sys_id) and (not str(table))) or ((not str(sys_id)) and (str(table))):
-            raise InvalidFormat('\nBoth parameters "table" and "sysId" are required')
+        self.__validate_format(to, 'Mandatory parameter "to"', str, 'String')
+        self.__validate_format(subject, 'Subject', str, 'String')
+        self.__validate_format(message, 'Message', str, 'String')
 
         if cc:
-            if not isinstance(cc, str):
-                raise InvalidFormat('"cc" format incorrect. String expected')
+            self.__validate_format(cc, 'CC', str, 'String')
+
         if bcc:
-            if not isinstance(bcc, str):
-                raise InvalidFormat('"bcc" format incorrect. String expected')
+            self.__validate_format(bcc, 'BCC', str, 'String')
+
         if table:
-            if not isinstance(table, str):
-                raise InvalidFormat('"table" format incorrect. String expected')
+            self.__validate_format(table, 'Table', str, 'String')
+
         if sys_id:
-            if not isinstance(sys_id, str):
-                raise InvalidFormat('"sysId" format incorrect. String expected')
+            self.__validate_format(sys_id, 'Sys_id', str, 'String')
 
         # Set the request parameters
         self.url = self.instance + '/api/now/v1/email'
@@ -695,9 +675,7 @@ class ServiceNowClient:
         Output : returns email data
         """
 
-        # Validation
-        if not isinstance(sys_id, str):
-            raise InvalidFormat('"filename" format incorrect. String expected')
+        self.__validate_format(sys_id, 'sys_id', str, 'String')
 
         # Set the request parameters
         self.url = self.instance + '/api/now/v1/email/' + str(sys_id)
@@ -715,3 +693,8 @@ class ServiceNowClient:
         data = self.response.json()
 
         return data['result']
+
+    @staticmethod
+    def __validate_format(var, var_label, instance_type, instance_type_label):
+        if not isinstance(var, instance_type):
+            raise InvalidFormat(var_label + ' format incorrect. ' + instance_type_label + 'expected.')
