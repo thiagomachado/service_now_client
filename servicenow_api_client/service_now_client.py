@@ -25,14 +25,15 @@ class ServiceNowClient:
         self.instance = 'https://' + instance + '.service-now.com'
         self.empty_error = empty_error
 
-    def create(self, table, data):
+    def create(self, table, data, custom):
         """
         Create a new record
 
         :param self: self object
         :param table: name of table (string)
         :param data: fields and value to be set for record (dictionary)
-
+        :param custom: if you are using a custom table and you don't want
+                       use the default url /api/now/table/table_name (boolean)
         Output : returns all fields and details of new record
         """
 
@@ -41,7 +42,7 @@ class ServiceNowClient:
         self.__validate_format(data, 'Data', dict, 'Dictionary')
 
         # Set the request parameters
-        self.url = self.instance + '/api/now/table/' + str(table)
+        self.url = self.instance + str(self.__define_table(table, custom))
 
         self.response = requests.post(url=self.url,
                                       auth=(self.username, self.password),
@@ -55,7 +56,7 @@ class ServiceNowClient:
         # Return the ticket details
         return self.response.json()
 
-    def update(self, table, search_list, data):
+    def update(self, table, search_list, data, custom):
         """
         Update the parameters of a specific record
 
@@ -63,6 +64,8 @@ class ServiceNowClient:
         :param table: name of table (string)
         :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or nested lists)
         :param data: field and value to be updated (dictionary)
+        :param custom: if you are using a custom table and you don't want
+                       use the default url /api/now/table/table_name (boolean)
 
         Output : returns dictionary containing number and status of request as true or false or error
         """
@@ -87,7 +90,7 @@ class ServiceNowClient:
         for item in incident_list:
 
             # Set the request parameters
-            self.url = self.instance + '/api/now/table/' + str(table) + '/' + str(item['sys_id'])
+            self.url = self.instance + str(self.__define_table(table, custom)) + '/' + str(item['sys_id'])
 
             self.response = requests.patch(url=self.url,
                                            auth=(self.username, self.password),
@@ -103,7 +106,7 @@ class ServiceNowClient:
         # Return result
         return result
 
-    def search(self, table, search_list, fields=''):
+    def search(self, table, search_list, custom, fields=''):
         """
         Method to retrieve an incident based on search parameters
 
@@ -111,12 +114,14 @@ class ServiceNowClient:
         :param table: name of table (string)
         :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or nested lists)
         :param fields: comma separated response fields (string)
+        :param custom: True if you are using a custom table and you don't want
+                       use the default url /api/now/table/table_name (boolean)
 
         Output : returns response fields of each matching records
         """
 
         self.url = (self.instance
-                    + '/api/now/table/' + str(table) + '?sysparm_limit=50&sysparm_query=sysparm_query='
+                    + str(self.__define_table(table, custom)) + '?sysparm_limit=50&sysparm_query=sysparm_query='
                     )
 
         # ServiceNow operators and symbols dictionary
@@ -209,14 +214,15 @@ class ServiceNowClient:
         # Return the JSON response (dictionary type)
         return self.response.json()['result']
 
-    def delete(self, table, search_list):
+    def delete(self, table, search_list, custom):
         """
         Method to delete record based on search parameters
 
         :param self: self object
         :param table: table name (string)
         :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or nested lists)
-
+        :param custom: True if you are using a custom table and you don't want
+                       use the default url /api/now/table/table_name (boolean)
         Output : returns dictionary containing number and status of request as true or false or error
         """
 
@@ -224,7 +230,7 @@ class ServiceNowClient:
         self.__validate_format(table, 'Table', str, 'String')
 
         # Calling search method to search for matching incidents
-        incident_list = self.search(table, search_list, 'sys_id')
+        incident_list = self.search(table, search_list, custom, 'sys_id')
 
         # Terminate operation if no incidents are found
         if not incident_list:
@@ -239,7 +245,7 @@ class ServiceNowClient:
         for item in incident_list:
 
             # Set the request parameters
-            self.url = self.instance + '/api/now/table/' + str(table) + '/' + str(item['sys_id'])
+            self.url = self.instance + str(self.__define_table(table, custom)) + '/' + str(item['sys_id'])
 
             self.response = requests.delete(url=self.url,
                                             auth=(self.username, self.password),
@@ -255,7 +261,7 @@ class ServiceNowClient:
         # Return result
         return result
 
-    def change_state(self, table, search_list, state):
+    def change_state(self, table, search_list, state, custom):
         """
         Method to change state of an incident
 
@@ -264,6 +270,8 @@ class ServiceNowClient:
         :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or
                             nested lists)
         :param state: the target state of the ticket (string)
+        :param custom: True if you are using a custom table and you don't want
+                       use the default url /api/now/table/table_name (boolean)
 
         Output : returns dictionary containing number and status of request as true or false or error
         """
@@ -274,7 +282,7 @@ class ServiceNowClient:
 
         table = table.lower()
         # Calling search method to search for matching incidents
-        incident_list = self.search(table, search_list, fields='number,sys_id')
+        incident_list = self.search(table, search_list, custom, fields='number,sys_id')
 
         # Terminate operation if no incidents are found
         if not incident_list:
@@ -355,7 +363,7 @@ class ServiceNowClient:
                         '"state" invalid. Choose one of the following:\n' + str(tuple(x for x in prb_state)))
             else:
                 try:
-                    self.url = self.instance + '/api/now/table/' + str(table) + '/' + item['sys_id']
+                    self.url = self.instance + str(self.__define_table(table, custom)) + '/' + item['sys_id']
                     self.data = ('{\"close_code\":\"' + inc_close_code[state.lower()]
                                  + '\",\"close_notes\":\"' + inc_notes[state.lower()]
                                  + '\",\"state\":\"' + inc_state[state.lower()]
@@ -380,7 +388,7 @@ class ServiceNowClient:
         # Return success
         return result
 
-    def get_file(self, table, search_list, type=''):
+    def get_file(self, table, search_list, custom, type=''):
         """
         Retrieve Attachment details pertaining to an incident and get the web link for download
 
@@ -388,7 +396,8 @@ class ServiceNowClient:
         :param table: name of table (string)
         :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or nested lists)
         :param type: dot extension of the type of attachment to be downloaded (string)
-
+        :param custom: True if you are using a custom table and you don't want
+                       use the default url /api/now/table/table_name (boolean)
         Output : returns dictionary containing number and status of request as true or false or error
         """
 
@@ -397,7 +406,7 @@ class ServiceNowClient:
         self.__validate_format(type, 'Type', str, 'String')
 
         # Calling search method to search for matching incidents
-        incident_list = self.search(table, search_list, 'number,sys_id')
+        incident_list = self.search(table, search_list, custom, 'number,sys_id')
 
         # Terminate operation if no incidents are found
         if not incident_list:
@@ -464,7 +473,7 @@ class ServiceNowClient:
             else:
                 return False
 
-    def upload_file(self, table, search_list, file_name):
+    def upload_file(self, table, search_list, file_name, custom):
         """
         Upload files to a specific ticket
 
@@ -472,6 +481,8 @@ class ServiceNowClient:
         :param table: table name (string)
         :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or nested lists)
         :param file_name: name of file to be uploaded (string)
+        :param custom: True if you are using a custom table and you don't want
+                       use the default url /api/now/table/table_name (boolean)
 
         Output : returns dictionary containing number and status of request as true or false or error
         """
@@ -481,7 +492,7 @@ class ServiceNowClient:
         self.__validate_format(file_name, 'File Name', str, 'String')
 
         # Calling search method to search for matching incidents
-        incident_list = self.search(table, search_list, 'number,sys_id')
+        incident_list = self.search(table, search_list, custom, 'number,sys_id')
 
         # Terminate operation if no incidents are found
         if not incident_list:
@@ -515,7 +526,7 @@ class ServiceNowClient:
         # Return result
         return result
 
-    def delete_file(self, table, search_list, file_name):
+    def delete_file(self, table, search_list, file_name, custom):
         """
         Deletes files to a specific ticket
 
@@ -523,6 +534,8 @@ class ServiceNowClient:
         :param table: name of table (string)
         :param search_list: comma separated field, operator and value to retrieve matching incidents (simple or nested lists)
         :param file_name: complete path of file to be uploaded (string)
+        :param custom: True if you are using a custom table and you don't want
+                       use the default url /api/now/table/table_name (boolean)
 
         Output : returns dictionary containing number and status of request as true or false or error
         """
@@ -532,7 +545,7 @@ class ServiceNowClient:
         self.__validate_format(file_name, 'File Name', str, 'String')
 
         # Calling search method to search for matching incidents
-        incident_list = self.search(table, search_list, 'number,sys_id')
+        incident_list = self.search(table, search_list, custom, 'number,sys_id')
 
         # Terminate operation if no incidents are found
         if not incident_list:
@@ -698,3 +711,10 @@ class ServiceNowClient:
     def __validate_format(var, var_label, instance_type, instance_type_label):
         if not isinstance(var, instance_type):
             raise InvalidFormat(var_label + ' format incorrect. ' + instance_type_label + 'expected.')
+
+    @staticmethod
+    def __define_table(table, custom):
+        if custom:
+            return table
+        else:
+            return f'/api/now/table/{table}'
