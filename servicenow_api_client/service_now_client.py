@@ -25,7 +25,7 @@ class ServiceNowClient:
         self.instance = 'https://' + instance + '.service-now.com'
         self.empty_error = empty_error
 
-    def create(self, table, data, custom):
+    def create(self, table, data, custom, max_retries=3, timeout=10):
         """
         Create a new record
 
@@ -34,6 +34,8 @@ class ServiceNowClient:
         :param data: fields and value to be set for record (dictionary)
         :param custom: if you are using a custom table and you don't want
                        use the default url /api/now/table/table_name (boolean)
+        :param max_retries: max retries, default is 3
+        :param timeout: set timeout interval, default is 10
         Output : returns all fields and details of new record
         """
 
@@ -44,19 +46,24 @@ class ServiceNowClient:
         # Set the request parameters
         self.url = self.instance + str(self.__define_table(table, custom))
 
-        self.response = requests.post(url=self.url,
-                                      auth=(self.username, self.password),
-                                      headers=self.headers,
-                                      data=json.dumps(data))
+        sess = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(max_retries=max_retries)
+        sess.mount(self.instance, adapter=adapter)
+        self.response = sess.post(url=self.url,
+                                  auth=(self.username, self.password),
+                                  headers=self.headers,
+                                  data=json.dumps(data),
+                                  timeout=timeout
+                                  )
 
-        if self.response.status_code != 201:
+        if self.response.status_code > 299:
             raise ResponseError(
                 'Error code = ' + str(self.response.status_code) + ' , Error details = ' + str(self.response.json()))
 
         # Return the ticket details
         return self.response.json()
 
-    def update(self, table, search_list, data, custom):
+    def update(self, table, search_list, data, custom, max_retries=3, timeout=10):
         """
         Update the parameters of a specific record
 
@@ -66,6 +73,8 @@ class ServiceNowClient:
         :param data: field and value to be updated (dictionary)
         :param custom: if you are using a custom table and you don't want
                        use the default url /api/now/table/table_name (boolean)
+        :param max_retries: max retries, default is 3
+        :param timeout: set timeout interval, default is 10
 
         Output : returns dictionary containing number and status of request as true or false or error
         """
@@ -75,8 +84,8 @@ class ServiceNowClient:
         self.__validate_format(data, 'Data', dict, 'Dictionary')
 
         # Calling search method to search for matching incidents
-        incident_list = self.search(table, search_list, 'sys_id')
-
+        incident_list = self.search(table, search_list, custom, 'sys_id')
+        #
         # Terminate operation if no incidents are found
         if not incident_list:
             if self.empty_error:
@@ -91,22 +100,27 @@ class ServiceNowClient:
 
             # Set the request parameters
             self.url = self.instance + str(self.__define_table(table, custom)) + '/' + str(item['sys_id'])
+            sess = requests.Session()
+            adapter = requests.adapters.HTTPAdapter(max_retries=max_retries)
+            sess.mount(self.instance, adapter=adapter)
+            self.response = sess.patch(url=self.url,
+                                       auth=(self.username, self.password),
+                                       headers=self.headers,
+                                       data=json.dumps(data),
+                                       timeout=timeout
+                                       )
 
-            self.response = requests.patch(url=self.url,
-                                           auth=(self.username, self.password),
-                                           headers=self.headers,
-                                           data=json.dumps(data))
-
-            if self.response.status_code != 200:
-                result[str(item['sys_id'])] = 'Error Code ' + str(self.response.status_code) + ', ' + str(
-                    self.response.json()['error'])
+            if self.response.status_code > 299:
+                raise ResponseError(
+                    'Error code = ' + str(self.response.status_code) + ' , Error details = ' + str(
+                        self.response.json()['error']))
             else:
                 result[str(item['sys_id'])] = 'true'
 
         # Return result
         return result
 
-    def search(self, table, search_list, custom, fields=''):
+    def search(self, table, search_list, custom, fields='', max_retries=3, timeout=10):
         """
         Method to retrieve an incident based on search parameters
 
@@ -116,6 +130,8 @@ class ServiceNowClient:
         :param fields: comma separated response fields (string)
         :param custom: True if you are using a custom table and you don't want
                        use the default url /api/now/table/table_name (boolean)
+        :param max_retries: max retries, default is 3
+        :param timeout: set timeout interval, default is 10
 
         Output : returns response fields of each matching records
         """
@@ -192,15 +208,17 @@ class ServiceNowClient:
 
         self.url = self.url + '&sysparm_fields=' + str(fields)
 
-        # Do the HTTP request
-        self.response = requests.get(self.url,
-                                     auth=(self.username,
-                                           self.password),
-                                     headers=self.headers,
-                                     )
+        sess = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(max_retries=max_retries)
+        sess.mount(self.instance, adapter=adapter)
+        self.response = sess.get(url=self.url,
+                                 auth=(self.username, self.password),
+                                 headers=self.headers,
+                                 timeout=timeout
+                                 )
 
         # Check for HTTP codes other than 200
-        if self.response.status_code != 200:
+        if self.response.status_code > 299:
             raise ResponseError(
                 'Error code = ' + str(self.response.status_code) + ' , Error details = ' + str(self.response.json()))
         else:
@@ -252,7 +270,7 @@ class ServiceNowClient:
                                             headers=self.headers,
                                             )
 
-            if self.response.status_code != 204:
+            if self.response.status_code > 299:
                 result[str(item['sys_id'])] = 'Error Code ' + str(self.response.status_code) + ', ' + str(
                     self.response.json()['error'])
             else:
@@ -379,7 +397,7 @@ class ServiceNowClient:
                                          data=self.data
                                          )
 
-            if self.response.status_code != 200:
+            if self.response.status_code > 299:
                 result[str(item['number'])] = 'Error Code ' + str(self.response.status_code) + ', ' + str(
                     self.response.json()['error'])
             else:
@@ -434,7 +452,7 @@ class ServiceNowClient:
                                          )
 
             # Check for HTTP codes other than 200
-            if self.response.status_code != 200:
+            if self.response.status_code > 299:
                 result[str(item['number'])] = 'Error Code ' + str(self.response.status_code) + ', ' + str(
                     self.response.json()['error'])
             else:
@@ -517,7 +535,7 @@ class ServiceNowClient:
                                      auth=(self.username, self.password),
                                      headers=headers, data=data)
 
-            if self.response.status_code != 200:
+            if self.response.status_code > 299:
                 result[str(item['number'])] = 'Error Code ' + str(self.response.status_code) + ', ' + str(
                     self.response.json()['error'])
             else:
@@ -572,7 +590,7 @@ class ServiceNowClient:
                                          )
 
             # Check for HTTP codes other than 200
-            if self.response.status_code != 200:
+            if self.response.status_code > 299:
                 result[str(item['number'])] = 'Error Code ' + str(self.response.status_code) + ', ' + str(
                     self.response.json()['error'])
             else:
@@ -603,7 +621,7 @@ class ServiceNowClient:
                                                     )
 
                     # Check for HTTP codes other than 204
-                    if self.response.status_code != 204:
+                    if self.response.status_code > 299:
                         result[str(item['number'])] = 'Error Code ' + str(self.response.status_code) + ', ' + str(
                             self.response.json()['error'])
                     else:
@@ -670,7 +688,7 @@ class ServiceNowClient:
                                       data=self.data
                                       )
 
-        if self.response.status_code != 200:
+        if self.response.status_code > 299:
             raise ResponseError(
                 'Error code = ' + str(self.response.status_code) + ' , Error details = ' + str(self.response.json()))
 
@@ -698,7 +716,7 @@ class ServiceNowClient:
                                      headers=self.headers
                                      )
 
-        if self.response.status_code != 200:
+        if self.response.status_code > 299:
             raise ResponseError(
                 'Error code = ' + str(self.response.status_code) + ' , Error details = ' + str(self.response.json()))
 

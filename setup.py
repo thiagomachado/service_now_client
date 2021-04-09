@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="servicenow-api-client",
-    version="0.0.8",
+    version="0.1.2",
     author="Thiago Machado",
     author_email="thiagomachhado@gmail.com",
     description="A python client to Service Now API.",
